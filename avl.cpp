@@ -15,7 +15,7 @@ public:
     Node(size_t minIndex, unsigned int x, unsigned int count) : leftSon(nullptr), rightSon(nullptr), height(0){};
 
     void calculateHeight(){
-        height = 1 + std::max(rightSon->height, leftSon->height);
+        height = 1 + std::max(rightSon == nullptr ? 0 : rightSon->height, leftSon == nullptr ? 0 : leftSon->height);
     }
 
     int bFactor(){
@@ -93,11 +93,44 @@ public:
                 return  doubleLeftRotation();
             }
         }
-
+        return this;
     };
 
+    // Assuming the tree contains pos
     Node* remove(size_t pos){
-        /* algorithm for removing*/
+        if (pos < val){
+            leftSon = leftSon->remove(pos);
+            if (bFactor() == -2 && rightSon->bFactor() <= 0){
+                return leftRotation();
+            } else if (bFactor() == -2 && rightSon->bFactor() == 1){
+                return doubleLeftRotation();
+            }
+        } if (pos > val) {
+            rightSon = rightSon->remove(pos);
+            if (bFactor() == 2 && leftSon->bFactor() >= 0){
+                return rightRotation();
+            } else if (bFactor() == 2 && rightSon->bFactor() == -1){
+                return doubleRightRotation();
+            }
+        } else {
+            if (rightSon == nullptr) {
+                return leftSon;
+            } else if (leftSon == nullptr) {
+                return rightSon;
+            }
+            Node* temp;
+            if (bFactor() == 1) {
+                Node* temp = leftRotation();
+                temp->leftSon = remove(pos);
+            } else {
+                Node* temp = rightRotation();
+                temp->leftSon = remove(pos);
+            }
+
+            delete this;
+            return temp;
+        }
+        return this;
     }
 
     unsigned int get(size_t pos){
