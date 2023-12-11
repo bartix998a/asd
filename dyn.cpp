@@ -16,9 +16,10 @@ public:
      */
     Node* leftSon;
     Node* rightSon;
-    size_t val;
+    size_t start, len, offset;
+    int x;
     int height;
-    Node(size_t val) : leftSon(nullptr), rightSon(nullptr), val(val), height(1){};
+    Node(size_t start, size_t end, int x) : leftSon(nullptr), rightSon(nullptr), start(start), len(len), offset(0), x(x), height(1){};
 
     void calculateHeight(){
         height = 1 + std::max(rightSon == nullptr ? 0 : rightSon->height, leftSon == nullptr ? 0 : leftSon->height);
@@ -28,9 +29,24 @@ public:
         return (leftSon == nullptr ? 0 : leftSon->height) - (rightSon == nullptr ? 0 : rightSon->height);
     }
 
-    Node* leftRotation(){
+    void pushOffsetToChildren(size_t extraOffset = 0){
+        if (rightSon != nullptr){
+            rightSon->offset += offset + extraOffset;
+        }
+        if (leftSon != nullptr){
+            leftSon->offset += offset + extraOffset;
+        }
+        start += offset + extraOffset;
+        offset = 0;
+    }
+
+    Node* leftRotation(){ // ok
         Node* temp1 = rightSon->leftSon;
         Node* newParent = rightSon;
+
+        pushOffsetToChildren();
+        newParent->pushOffsetToChildren(offset);
+
         rightSon->leftSon = this;
         rightSon = temp1;
         this->calculateHeight();
@@ -38,9 +54,13 @@ public:
         return newParent;
     }
 
-    Node* rightRotation(){
+    Node* rightRotation(){// ok
         Node* temp1 = leftSon->rightSon;
         Node* newParent = leftSon;
+
+        pushOffsetToChildren();
+        newParent->pushOffsetToChildren(offset);
+
         leftSon->rightSon = this;
         leftSon = temp1;
         this->calculateHeight();
@@ -70,35 +90,38 @@ public:
         } else return this;
     }
 
-    size_t max(){
-        if (this->rightSon != nullptr){
-            return rightSon->max();
+    void insert_a_thing_prep(size_t start, size_t len, int x){// this is the hard insert
+        std::stack<Node*> path;
+        Node* current = this;
+        size_t totalOffset = 0;
+        size_t pos = start;
+        while (!(current->start + current->offset + totalOffset <= pos && pos < current->start + current->offset + totalOffset + len)){
+            totalOffset += current->offset;
+            path.push(current);
+            if (pos < current->start + current->offset + totalOffset){
+                if (current->rightSon != nullptr){
+                    current->rightSon->offset += len;
+                }
+                current = current->leftSon;
+            } else if (pos > current->start + current->offset + totalOffset + len) {
+                current = current->rightSon;
+            }
         }
-        return val;
     }
 
-    size_t min(){
-        if (this->leftSon != nullptr){
-            return leftSon->min();
-        }
-        return val;
+    Node* insert(size_t start, size_t len, int x){// this is the hard insert
+        return insert(new Node(start, len, x));
     }
 
-    Node* insert(size_t pos){
-        return insert(new Node(pos));
-    }
-
-    Node* insert(Node* node){
-        if (node->val == this->val) {
-            throw std::invalid_argument("Wartosc istnieje");
-        }
-        if (node->val < this->val){
+    Node* insert(Node* node, size_t prev_offset = 0){
+        // potencjalnie dodac cos z wyjatkami
+        if (node->start < start + offset + prev_offset){
             if (leftSon == nullptr){
                 leftSon = node;
                 calculateHeight();
                 return this;
             } else {
-                leftSon = leftSon->insert(node);
+                leftSon = leftSon->insert(node, offset + prev_offset);
             }
             calculateHeight();
             return balanceTree();
@@ -108,7 +131,7 @@ public:
                 calculateHeight();
                 return this;
             } else {
-                rightSon = rightSon->insert(node);
+                rightSon = rightSon->insert(node, offset + prev_offset);
             }
             calculateHeight();
             return balanceTree();
@@ -117,32 +140,26 @@ public:
         return this;
     };
 
-    template<typename K>
-    Node* insert_range(K v){
-        Node* temp = this;
-        for (int i : v){
-            temp = temp->insert(i);
-        }
-        return temp;
-    }
-
     // Assuming the tree contains pos
     Node* remove(size_t pos){
         std::stack<Node*> path;
         Node* current = this;
-        while (current->val != pos){
+        size_t totalOffset = 0;
+        while (!(current->start + current->offset + totalOffset <= pos && pos < current->start + current->offset + totalOffset + len)){
+            totalOffset += current->offset;
             path.push(current);
-            if (pos < current->val){
+            if (pos < current->start + current->offset + totalOffset){
                 current = current->leftSon;
-            } else if (pos > current->val) {
+            } else if (pos > current->start + current->offset + totalOffset + len) {
                 current = current->rightSon;
             }
         }
 
         Node* temp = current;
-
+        size_t tempOffset = totalOffset;
 
         if (current->rightSon != nullptr){
+            totalOffset += current->offset;
             path.push(current);
             current = current->rightSon;
             while (current->leftSon != nullptr) {
@@ -155,9 +172,12 @@ public:
                 path.top()->rightSon = current->rightSon;
             }
 
-            temp->val = current->val;
+            temp->start = current->start + totalOffset - tempOffset;
+            temp->len = current->len;
+            temp->x = current->x;
             delete current;
         } else if (current->leftSon != nullptr){
+            totalOffset += current->offset;
             path.push(current);
             current = current->leftSon;
             while (current->rightSon != nullptr) {
@@ -169,7 +189,9 @@ public:
             } else {
                 path.top()->leftSon = current->leftSon;
             }
-            temp->val = current->val;
+            temp->start = current->start + totalOffset - tempOffset;
+            temp->len = current->len;
+            temp->x = current->x;
             delete current;
         }
 
@@ -188,15 +210,15 @@ public:
         return balanceTree();
     }
 
-    Node* get_node(size_t pos){
-        if (pos < val){
+    Node* get_node(size_t pos, size_t prev_offset = 0){// ok
+        if (pos < prev_offset + offset + start){
             if (leftSon != nullptr){
-                return leftSon->get_node(pos);
+                return leftSon->get_node(pos, prev_offset + offset);
             }
             throw std::invalid_argument("Nie ma w drzewie");
-        } else if (pos > val) {
+        } else if (pos > prev_offset + offset + start + len) {
             if (rightSon != nullptr){
-                return rightSon->get_node(pos);
+                return rightSon->get_node(pos, prev_offset + offset);
             }
             throw std::invalid_argument("Nie ma w drzewie");
         } else {
@@ -204,40 +226,11 @@ public:
         }
     }
 
-    unsigned int get(size_t pos){
-        // pos should always be in the tree
-        return get_node(pos)->val;
+    int get(size_t pos){// ok
+         // pos should always be in the tree
+        return get_node(pos)->x;
     }
 
-    void print_infix(){
-        if (leftSon != nullptr){
-            leftSon->print_infix();
-        }
-        std::cout << val << std::endl;
-        if (rightSon != nullptr){
-            rightSon->print_infix();
-        }
-    }
-
-    void update_heights(){
-        if (leftSon != nullptr){
-            leftSon->calculateHeight();
-        }
-        if (rightSon != nullptr){
-            rightSon->calculateHeight();
-        }
-        calculateHeight();
-    }
-
-    void check_avl(){
-        if (leftSon != nullptr){
-            leftSon->check_avl();
-        }
-        if (rightSon != nullptr){
-            rightSon->check_avl();
-        }
-        assert(bFactor() >= -1 && bFactor() <= 1);
-    }
 };
 
 int main(void){
