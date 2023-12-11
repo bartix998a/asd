@@ -19,7 +19,7 @@ public:
     size_t start, len, offset;
     int x;
     int height;
-    Node(size_t start, size_t end, int x) : leftSon(nullptr), rightSon(nullptr), start(start), len(len), offset(0), x(x), height(1){};
+    Node(size_t start, size_t len, int x) : leftSon(nullptr), rightSon(nullptr), start(start), len(len), offset(0), x(x), height(1){};
 
     void calculateHeight(){
         height = 1 + std::max(rightSon == nullptr ? 0 : rightSon->height, leftSon == nullptr ? 0 : leftSon->height);
@@ -234,5 +234,32 @@ public:
 };
 
 int main(void){
-    return 0;
+    int m;
+    size_t last_pos;
+    size_t size = 0;
+    std::cin >> m;
+    Node* n = nullptr;
+    for (int i = 0; i < m; i++) {
+        char a;
+        std::cin >> a;
+        switch (a) {
+            case 'i':
+                size_t j, k;
+                int x;
+                std::cin >> j;
+                std::cin >> x;
+                std::cin >> k;
+                if (n == nullptr){
+                    n = new Node(0, k, x);
+                } else {
+                    n = n->insert((j + last_pos)%(size + 1), k, x);
+                }
+                break;
+            case 'g':
+                size_t pos;
+                std::cin >> pos;
+                std::cout << n->get((pos + last_pos)%(size + 1)) << std::endl;
+                last_pos = (pos + last_pos)%(size + 1);
+        }
+    }
 }
