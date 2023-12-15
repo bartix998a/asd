@@ -95,6 +95,7 @@ public:
         Node* current = this;
         size_t totalOffset = 0;
         size_t pos = start;
+        size_t temp;
         while (!(current->start + current->offset + totalOffset <= pos && pos < current->start + current->offset + totalOffset + current->len)){
             totalOffset += current->offset;
             path.push(current);
@@ -107,8 +108,14 @@ public:
                 current = current->rightSon;
             }
         }
+        temp = current->len;
         current->len = pos - (current->start + current->offset + totalOffset);
-        return insert(current->start + current->offset + totalOffset + current->len, len, x);
+        if (temp - current->len > 0){
+            return insert(current->start + current->offset + totalOffset + current->len + len, temp - current->len, current->x);
+        } else {
+            return this;
+        }
+
     }
 
     Node* insert(size_t start, size_t len, int x){// this is the hard insert
@@ -237,7 +244,7 @@ public:
 
 int main(void){
     int m;
-    size_t last_pos;
+    size_t last_pos = 0;
     size_t size = 0;
     std::cin >> m;
     Node* n = nullptr;
@@ -254,9 +261,10 @@ int main(void){
                 if (n == nullptr){
                     n = new Node(0, k, x);
                 } else {
-                    n->insert_a_thing_prep((j + last_pos)%(size + 1), k, x);
+                    n = n->insert_a_thing_prep((j + last_pos)%(size + 1), k, x);
                     n = n->insert((j + last_pos)%(size + 1), k, x);
                 }
+                size += k;
                 break;
             case 'g':
                 size_t pos;
