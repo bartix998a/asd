@@ -103,13 +103,21 @@ public:
                 if (current->rightSon != nullptr){
                     current->rightSon->offset += len;
                 }
+                current->start += len;
                 current = current->leftSon;
-            } else if (pos > current->start + current->offset + totalOffset + len) {
+            } else if (pos >= current->start + current->offset + totalOffset + current->len) {
                 current = current->rightSon;
             }
         }
         temp = current->len;
-        current->len = pos - (current->start + current->offset + totalOffset);
+        if (current->rightSon != nullptr){
+            current->rightSon->offset += len;
+        }
+        if (pos - (current->start + current->offset + totalOffset) != 0){
+            current->len = pos - (current->start + current->offset + totalOffset);
+        } else {
+            current->start += len;
+        }
         if (temp - current->len > 0){
             return insert(current->start + current->offset + totalOffset + current->len + len, temp - current->len, current->x);
         } else {
@@ -127,6 +135,7 @@ public:
         if (node->start < start + offset + prev_offset){
             if (leftSon == nullptr){
                 leftSon = node;
+                node->offset -= offset + prev_offset;
                 calculateHeight();
                 return this;
             } else {
@@ -137,6 +146,7 @@ public:
         } else {
             if(rightSon == nullptr){
                 rightSon = node;
+                node->offset -= offset + prev_offset;
                 calculateHeight();
                 return this;
             } else {
@@ -258,8 +268,10 @@ int main(void){
                 std::cin >> j;
                 std::cin >> x;
                 std::cin >> k;
-                if (n == nullptr){
+                if (n == nullptr) {
                     n = new Node(0, k, x);
+                } else if ((j + last_pos)%(size + 1) == size) {
+                    n = n->insert(size, k, x);
                 } else {
                     n = n->insert_a_thing_prep((j + last_pos)%(size + 1), k, x);
                     n = n->insert((j + last_pos)%(size + 1), k, x);
