@@ -16,7 +16,8 @@ public:
      */
     Node* leftSon;
     Node* rightSon;
-    size_t start, len, offset;
+    int64_t start, len;
+    int64_t offset;
     int x;
     int height;
     Node(size_t start, size_t len, int x) : leftSon(nullptr), rightSon(nullptr), start(start), len(len), offset(0), x(x), height(1){};
@@ -99,13 +100,13 @@ public:
         while (!(current->start + current->offset + totalOffset <= pos && pos < current->start + current->offset + totalOffset + current->len)){
             totalOffset += current->offset;
             path.push(current);
-            if (pos < current->start + current->offset + totalOffset){
+            if (pos < current->start + totalOffset){
                 if (current->rightSon != nullptr){
                     current->rightSon->offset += len;
                 }
                 current->start += len;
                 current = current->leftSon;
-            } else if (pos >= current->start + current->offset + totalOffset + current->len) {
+            } else if (pos >= current->start + totalOffset + current->len) {
                 current = current->rightSon;
             }
         }
@@ -135,7 +136,7 @@ public:
         if (node->start < start + offset + prev_offset){
             if (leftSon == nullptr){
                 leftSon = node;
-                node->offset -= offset + prev_offset;
+                node->start -= offset + prev_offset;
                 calculateHeight();
                 return this;
             } else {
@@ -146,7 +147,7 @@ public:
         } else {
             if(rightSon == nullptr){
                 rightSon = node;
-                node->offset -= offset + prev_offset;
+                node->start -= offset + prev_offset;
                 calculateHeight();
                 return this;
             } else {
@@ -235,7 +236,7 @@ public:
                 return leftSon->get_node(pos, prev_offset + offset);
             }
             throw std::invalid_argument("Nie ma w drzewie");
-        } else if (pos > prev_offset + offset + start + len) {
+        } else if (pos > prev_offset + offset + start + len - 1) {
             if (rightSon != nullptr){
                 return rightSon->get_node(pos, prev_offset + offset);
             }
@@ -248,6 +249,21 @@ public:
     int get(size_t pos){// ok
          // pos should always be in the tree
         return get_node(pos)->x;
+    }
+
+    void prt(bool first = true){
+        if (leftSon != nullptr){
+            leftSon->prt(false);
+        }
+        for (int i = 0; i < len; i++) {
+            std::cout << x << " " << len << "; ";
+        }
+        if(rightSon != nullptr){
+            rightSon->prt(false);
+        }
+        if (first){
+            std::cout << std::endl;
+        }
     }
 
 };
@@ -281,8 +297,9 @@ int main(void){
             case 'g':
                 size_t pos;
                 std::cin >> pos;
-                std::cout << n->get((pos + last_pos)%(size)) << std::endl;
-                last_pos = (pos + last_pos)%(size);
+                last_pos = n->get((pos + last_pos)%(size));
+                std::cout << last_pos << std::endl;
+                break;
         }
     }
 }
