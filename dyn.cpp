@@ -90,12 +90,12 @@ public:
         } else return this;
     }
 
-    void insert_a_thing_prep(size_t start, size_t len, int x){// this is the hard insert
+    Node* insert_a_thing_prep(size_t start, size_t len, int x){// this is the hard insert
         std::stack<Node*> path;
         Node* current = this;
         size_t totalOffset = 0;
         size_t pos = start;
-        while (!(current->start + current->offset + totalOffset <= pos && pos < current->start + current->offset + totalOffset + len)){
+        while (!(current->start + current->offset + totalOffset <= pos && pos < current->start + current->offset + totalOffset + current->len)){
             totalOffset += current->offset;
             path.push(current);
             if (pos < current->start + current->offset + totalOffset){
@@ -107,6 +107,8 @@ public:
                 current = current->rightSon;
             }
         }
+        current->len = pos - (current->start + current->offset + totalOffset);
+        return insert(current->start + current->offset + totalOffset + current->len, len, x);
     }
 
     Node* insert(size_t start, size_t len, int x){// this is the hard insert
@@ -252,14 +254,15 @@ int main(void){
                 if (n == nullptr){
                     n = new Node(0, k, x);
                 } else {
+                    n->insert_a_thing_prep((j + last_pos)%(size + 1), k, x);
                     n = n->insert((j + last_pos)%(size + 1), k, x);
                 }
                 break;
             case 'g':
                 size_t pos;
                 std::cin >> pos;
-                std::cout << n->get((pos + last_pos)%(size + 1)) << std::endl;
-                last_pos = (pos + last_pos)%(size + 1);
+                std::cout << n->get((pos + last_pos)%(size)) << std::endl;
+                last_pos = (pos + last_pos)%(size);
         }
     }
 }
