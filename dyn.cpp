@@ -269,6 +269,8 @@ public:
 };
 
 int main(void){
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(NULL);
     int m;
     size_t last_pos = 0;
     size_t size = 0;
