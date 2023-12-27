@@ -167,7 +167,7 @@ size_t get_count(Node *tree, int pos, size_t& undecided_counter) {
         } else if (index_left != index_right) {
             undecided_counter += countElements(tree[index_left].local, t) + countElements(tree[index_right].local, t);
             //count += countElements(tree[parent(index_left)].below, t);
-            undecided_counter += countElements(tree[index_left].above_max_path, t) + countElements(tree[index_right].above_min_path, t);
+            //undecided_counter += countElements(tree[index_left].above_max_path, t) + countElements(tree[index_right].above_min_path, t);
         } else if (index_left == index_right) {
             undecided_counter += countElements(tree[index_left].above_max_path, t) + countElements(tree[index_right].above_min_path, t);
         }
