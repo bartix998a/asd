@@ -20,7 +20,7 @@ using tup = std::tuple<int, int, int>;
 
 
 bool cmp(tup *t1, tup *t2) {
-    return *t1 < *t2;
+    return *t1 <= *t2;
 }
 
 struct Node {
@@ -66,8 +66,12 @@ int smallestPow(size_t n) {
 }
 
 void nextIndex(int &current, Node *tree, tup *element, bool left) {
+    if (leftSon(current) >= treeSize){
+        current = leftSon(current);
+        return;
+    }
     if (left) {
-        if (get<1>(*element) < tree[leftSon(current)].max) {
+        if (get<1>(*element) <= tree[leftSon(current)].max) {
             current = leftSon(current);
         } else {
             current = rightSon(current);
@@ -107,8 +111,8 @@ void insertToTree(Node *tree, tup *element) {
 }
 
 int countElements(vector<tup *> v, int t) {
-    tup upper_b = tuple(t + max_distance + 1, INT_MAX, INT_MAX);
-    tup lower_b = tuple(t - max_distance - 1, INT_MIN, INT_MIN);
+    tup upper_b = tuple(t + max_distance, INT_MAX, INT_MAX);
+    tup lower_b = tuple(t - max_distance, INT_MIN, INT_MIN);
     if (v.empty()) {
         return 0;
     }
@@ -182,7 +186,7 @@ int main(void) {
     size_t undecided_counter = 0;
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
-    set<pair<int, int>> allInts;
+    set<int> allInts;
     cin >> number_of_intervals;
     tup elements[number_of_intervals];
     cin >> max_distance;
@@ -192,8 +196,8 @@ int main(void) {
         cin >> b;
         cin >> t;
         elements[i] = std::tie(t, a, b);
-        allInts.insert({a, 1});
-        allInts.insert({b, 2});
+        allInts.insert(a);
+        allInts.insert(b);
     }
     sort(elements, elements + number_of_intervals);
     int depth = smallestPow(allInts.size()) + 1; // moze bez +1
@@ -202,9 +206,9 @@ int main(void) {
     for (int i = 0; i < depth; ++i) {
         for (int j = treeSize / (1 << (i + 1)); j < treeSize / (1 << (i)); j++) {
             if (i == 0 && !allInts.empty()) {
-                tree[j].min = allInts.begin()->first;
+                tree[j].min = *allInts.begin();
+                tree[j].max = allInts.empty() ? INT_MAX : *allInts.begin();
                 allInts.erase(allInts.begin());
-                tree[j].max = allInts.empty() ? INT_MAX : allInts.begin()->first;
             } else if (i == 0 && allInts.empty()) {
                 tree[j].min = INT_MAX;
                 tree[j].max = INT_MAX;
