@@ -106,9 +106,26 @@ void insertToTree(Node *tree, tup *element) {
     }
 }
 
+//void insertPath(Node* tree, tup* element, int start){
+//    int current_R = rightSon(start);
+//    int current_L = leftSon(start);
+//    while (current_R < treeSize) {
+//        tree[current_L].above_min_path.push_back(element);
+//        tree[current_R].above_max_path.push_back(element);
+//        nextIndex(current_R, tree, element, false);
+//        nextIndex(current_L, tree, element, true);
+//    }
+//}
+//
+//void insertPathsFromNode(Node* tree, int pos){
+//    for (auto element : tree[pos].local) {
+//        insertPath(tree, element, pos);
+//    }
+//}
+
 int countElements(vector<tup *> v, int t) {
-    tup upper_b = tuple(t + max_distance, INT_MAX, INT_MAX);
-    tup lower_b = tuple(t - max_distance, INT_MIN, INT_MIN);
+    tup upper_b = tuple(t + max_distance + 1, INT_MAX, INT_MAX);
+    tup lower_b = tuple(t - max_distance - 1, INT_MIN, INT_MIN);
     if (v.empty()) {
         return 0;
     }
@@ -118,14 +135,14 @@ int countElements(vector<tup *> v, int t) {
     );
 }
 
-int countNode(int &index, int &undecided, Node *tree, bool left, int t) {
+int countNode(int& index, int& undecided, Node *tree, bool left, int t, size_t& undecided_count) {
     int count = 0;
     vector<tup *> undecided_counter = left ? tree[index].above_max_path : tree[index].above_min_path;
     if ((isLeftSon(index) && left) || (isRightSon(index) && !left)) {
         count += countElements(tree[parent(index)].local, t);
         count += countElements(tree[neighbour(index)].below, t);
         int temp = countElements(undecided_counter, t);
-        count += undecided - temp;
+        undecided_count += undecided - temp;
         undecided = temp;
     } else if ((isRightSon(index) && left) || (isLeftSon(index) && !left)) {
         undecided = countElements(undecided_counter, t);
@@ -133,8 +150,8 @@ int countNode(int &index, int &undecided, Node *tree, bool left, int t) {
     return count;
 }
 
-size_t get_count(Node *tree, int pos) {
-    size_t result;
+size_t get_count(Node *tree, int pos, size_t& undecided_counter) {
+    size_t result = 0;
     for (auto it = tree[pos].local.begin();
          it != tree[pos].local.end(); it++) { // i hope it iterates normally from the begining
         int index_left = pos;
@@ -144,17 +161,19 @@ size_t get_count(Node *tree, int pos) {
         int t = get<0>(**it);
         tup upper_b = tuple(get<0>(**it) + max_distance, INT_MAX, INT_MAX);
         tup lower_b = tuple(get<0>(**it) - max_distance, INT_MIN, INT_MIN);
-        size_t count = std::distance(tree[pos].local.begin(), upper_bound(it, tree[pos].local.end(), &upper_b, cmp));
+        size_t count = std::distance(++(tree[pos].local.begin()), upper_bound(it, tree[pos].local.end(), &upper_b, cmp));
         nextIndex(index_left, tree, *it, true);
         nextIndex(index_right, tree, *it, false);
         while (rightSon(index_left) < treeSize) {
             nextIndex(index_left, tree, *it, true);
             nextIndex(index_right, tree, *it, false);
-            count += countNode(index_left, left_undecided, tree, true, t);
-            count += countNode(index_right, right_undecided, tree, false, t);
+            count += countNode(index_left, left_undecided, tree, true, t, undecided_counter);
+            count += countNode(index_right, right_undecided, tree, false, t, undecided_counter);
         }
-        count += right_undecided + left_undecided;
-        count += countElements(tree[index_left].local, t) + countElements(tree[index_right].local, t);
+        undecided_counter += right_undecided + left_undecided;
+        if (parent(index_left) != parent(index_right)){
+            count += countElements(tree[parent(index_left)].local, t) + countElements(tree[parent(index_right)].local, t);
+        }
         result += count;
     }
     return result;
@@ -162,6 +181,7 @@ size_t get_count(Node *tree, int pos) {
 
 int main(void) {
     size_t result = 0;
+    size_t undecided_counter = 0;
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
     set<pair<int, int>> allInts;
@@ -201,10 +221,11 @@ int main(void) {
         insertToTree(tree, &(elements[i]));
     }
     for (int i = 0; i < depth; ++i) {
-        for (int j = treeSize / (1 << (i + 1)); j < treeSize / (1 << (i)); i++) {
-            result += get_count(tree, j);
+        for (int j = treeSize / (1 << (i + 1)); j < treeSize / (1 << (i)); j++) {
+            result += get_count(tree, j, undecided_counter);
         }
     }
+    result += undecided_counter/2;
     cout << result << endl;
     return 0;
 }
