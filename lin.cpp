@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include <climits>
+#include <cassert>
 
 int treeSize;
 int number_of_intervals, max_distance;
@@ -86,16 +87,14 @@ void insertToTree(Node *tree, tup *element) {
     int current_R = 1;
     nextIndex(current_L, tree, element, true);
     nextIndex(current_R, tree, element, false);
-    while (current_L == current_R && current_L < treeSize / 2) {
+    while (current_L == current_R && current_L < treeSize) {
         tree[parent(current_L)].below.push_back(element);// z posortowanej push back dziala
         nextIndex(current_R, tree, element, false);
         nextIndex(current_L, tree, element, true);
     }
-    if (current_L == current_R) {
-        nextIndex(current_R, tree, element, false);
-        nextIndex(current_L, tree, element, true);
-    }
+
     tree[parent(current_L)].local.push_back(element);
+    tree[parent(current_L)].below.push_back(element);
     if (current_L == current_R) {
         return;
     }
@@ -145,19 +144,34 @@ size_t get_count(Node *tree, int pos, size_t& undecided_counter) {
         int t = get<0>(**it);
         tup upper_b = tuple(get<0>(**it) + max_distance, INT_MAX, INT_MAX);
         tup lower_b = tuple(get<0>(**it) - max_distance, INT_MIN, INT_MIN);
-        size_t count = std::distance(++(tree[pos].local.begin()), upper_bound(it, tree[pos].local.end(), &upper_b, cmp));
-        nextIndex(index_left, tree, *it, true);
-        nextIndex(index_right, tree, *it, false);
+        auto temp = it + 1;
+        size_t count = std::distance(it + 1, upper_bound(it, tree[pos].local.end(), &upper_b, cmp));
+
+        if (rightSon(index_right) < treeSize) {
+            nextIndex(index_left, tree, *it, true);
+            nextIndex(index_right, tree, *it, false);
+            left_undecided = countElements(tree[index_left].above_max_path, t);
+            right_undecided = countElements(tree[index_right].above_min_path, t);
+        }
+
         while (rightSon(index_left) < treeSize) {
             nextIndex(index_left, tree, *it, true);
             nextIndex(index_right, tree, *it, false);
             count += countNode(index_left, left_undecided, tree, true, t, undecided_counter);
             count += countNode(index_right, right_undecided, tree, false, t, undecided_counter);
         }
+
         undecided_counter += right_undecided + left_undecided;
         if (parent(index_left) != parent(index_right)){
-            count += countElements(tree[parent(index_left)].local, t) + countElements(tree[parent(index_right)].local, t);
+            undecided_counter += countElements(tree[index_left].local, t) + countElements(tree[index_right].local, t);
+        } else if (index_left != index_right) {
+            undecided_counter += countElements(tree[index_left].local, t) + countElements(tree[index_right].local, t);
+            //count += countElements(tree[parent(index_left)].below, t);
+            undecided_counter += countElements(tree[index_left].above_max_path, t) + countElements(tree[index_right].above_min_path, t);
+        } else if (index_left == index_right) {
+            undecided_counter += countElements(tree[index_left].above_max_path, t) + countElements(tree[index_right].above_min_path, t);
         }
+
         result += count;
     }
     return result;
@@ -209,6 +223,7 @@ int main(void) {
             result += get_count(tree, j, undecided_counter);
         }
     }
+    assert(undecided_counter%2 == 0);
     result += undecided_counter/2;
     cout << result << endl;
     return 0;
