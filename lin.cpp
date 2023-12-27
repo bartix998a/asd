@@ -73,7 +73,7 @@ void nextIndex(int& current, Node* tree, tup* element, bool left){
             current = rightSon(current);
         }
     } else {
-        if (get<2>(*element) < tree[leftSon(current)].max){
+        if (get<2>(*element) <= tree[leftSon(current)].max){
             current = leftSon(current);
         } else {
             current = rightSon(current);
@@ -87,17 +87,22 @@ void insertToTree(Node* tree, tup* element){
     int current_R = 1;
     nextIndex(current_L, tree, element, true);
     nextIndex(current_R, tree, element, false);
-    while (current_L == current_R){
+    while (current_L == current_R && current_L < treeSize/2){
         tree[parent(current_L)].below.push_back(element);// z posortowanej push back dziala
         nextIndex(current_R, tree, element, false);
         nextIndex(current_L, tree, element, true);
     }
+    if (current_L == current_R){
+        nextIndex(current_R, tree, element, false);
+        nextIndex(current_L, tree, element, true);
+    }
     tree[parent(current_L)].local.push_back(element);
-    nextIndex(current_L, tree,element, true);
-    nextIndex(current_R, tree, element, false);
-    while (rightSon(current_L) < treeSize){
-        tree[parent(current_L)].above_min_path.push_back(element);
-        tree[parent(current_R)].above_max_path.push_back(element);
+    if (current_L == current_R){
+        return;
+    }
+    while (current_R < treeSize){
+        tree[current_L].above_min_path.push_back(element);
+        tree[current_R].above_max_path.push_back(element);
         nextIndex(current_R, tree, element, false);
         nextIndex(current_L, tree, element, true);
     }
@@ -156,7 +161,7 @@ int main(void){
     size_t result = 0;
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
-    set<int> allInts;
+    set<pair<int, int>> allInts;
     cin >> n;
     tup elements[n];
     cin >> k;
@@ -166,21 +171,19 @@ int main(void){
         cin >> b;
         cin >> t;
         elements[i] = std::tie(t, a, b);
-        allInts.insert(a);
-        allInts.insert(b);
+        allInts.insert({a, 1});
+        allInts.insert({b, 2});
     }
     sort(elements, elements + n);
     int depth = smallestPow(allInts.size()) + 1; // moze bez +1
-    treeSize = (1 << (smallestPow(allInts.size()) + 1)) - 1;//moze nie starczyc miejsca
-    int lastIndex = 0;
-    int last;
+    treeSize = (1 << (smallestPow(allInts.size()) + 1));// korzen w 1
     Node* tree = new Node[treeSize];
     for (int i = 0; i < depth; ++i) {
-        for (int j = treeSize /(1<< (i + 1)); j < treeSize / (1 << (i)); i++){
+        for (int j = treeSize /(1<< (i + 1)); j < treeSize / (1 << (i)); j++){
             if (i == 0 && !allInts.empty()){
-                tree[j].min = *allInts.begin();
+                tree[j].min = allInts.begin()->first;
                 allInts.erase(allInts.begin());
-                tree[j].max = allInts.empty() ? INT_MAX : *allInts.begin();
+                tree[j].max = allInts.empty() ? INT_MAX : allInts.begin()->first;
             } else if (i == 0 && allInts.empty()) {
                 tree[j].min = INT_MAX;
                 tree[j].max = INT_MAX;
@@ -190,6 +193,7 @@ int main(void){
             }
         }
     }
+    allInts.clear();
     for (int i = 0; i < n; ++i) {
         insertToTree(tree, &(elements[i]));
     }
