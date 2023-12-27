@@ -8,6 +8,7 @@
 #include <functional>
 #include <vector>
 #include <algorithm>
+#include <climits>
 
 int treeSize;
 int number_of_intervals, max_distance;
@@ -105,23 +106,6 @@ void insertToTree(Node *tree, tup *element) {
         nextIndex(current_L, tree, element, true);
     }
 }
-
-//void insertPath(Node* tree, tup* element, int start){
-//    int current_R = rightSon(start);
-//    int current_L = leftSon(start);
-//    while (current_R < treeSize) {
-//        tree[current_L].above_min_path.push_back(element);
-//        tree[current_R].above_max_path.push_back(element);
-//        nextIndex(current_R, tree, element, false);
-//        nextIndex(current_L, tree, element, true);
-//    }
-//}
-//
-//void insertPathsFromNode(Node* tree, int pos){
-//    for (auto element : tree[pos].local) {
-//        insertPath(tree, element, pos);
-//    }
-//}
 
 int countElements(vector<tup *> v, int t) {
     tup upper_b = tuple(t + max_distance + 1, INT_MAX, INT_MAX);
