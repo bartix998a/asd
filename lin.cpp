@@ -194,8 +194,8 @@ size_t get_count(Node *tree, tup *element, int pos, size_t &undecided_counter) {
     if (rightSon(index_right) < treeSize) {
         nextIndex(index_left, tree, element, true);
         nextIndex(index_right, tree, element, false);
-        left_undecided = tree[pos].above_max_path;
-        right_undecided = tree[pos].above_min_path;
+        left_undecided = tree[index_left].above_max_path;
+        right_undecided = tree[index_right].above_min_path;
     }
 
     while (rightSon(index_left) < treeSize) {
@@ -205,6 +205,7 @@ size_t get_count(Node *tree, tup *element, int pos, size_t &undecided_counter) {
         count += countNode(index_right, right_undecided, tree, false, t, undecided_counter);
     }
 
+    undecided_counter += left_undecided + right_undecided;
     if (index_left != index_right) {
         undecided_counter += tree[index_left].local + tree[index_right].local;
     } else if (index_left == index_right) {
